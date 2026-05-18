@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://8is2w4enfijx"]
+
+[ext_resource type="Script" uid="uid://tj3nare1px7q" path="res://fluidsim_main_test.gd" id="1_pxcva"]
+[ext_resource type="Shader" uid="uid://b7pqfc7vk3pr5" path="res://distort_display.gdshader" id="2_67k38"]
+[ext_resource type="Script" uid="uid://ew8yq3dttbyh" path="res://button_logic.gd" id="2_4704r"]
+[ext_resource type="Shader" uid="uid://ccil5d33wk0rv" path="res://fluid_logic.gdshader" id="2_rih6d"]
+[ext_resource type="Texture2D" uid="uid://bphltjug0d3g8" path="res://GridColor_640.png" id="3_67k38"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_wyr84"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gc8bj"]
+resource_local_to_scene = true
+shader = ExtResource("2_67k38")
+shader_parameter/fluid_texture = SubResource("ViewportTexture_wyr84")
+shader_parameter/source_image = ExtResource("3_67k38")
+shader_parameter/distort_strength = 0.05
+shader_parameter/vel_scale = 20.0
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_67k38"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_67k38"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qtpj3"]
+shader = ExtResource("2_rih6d")
+shader_parameter/res = Vector2(0, 0)
+shader_parameter/dt = 0.016
+shader_parameter/vel_scale = 20.0
+shader_parameter/dissipation = 0.995
+
+[node name="Node2D" type="Node2D" unique_id=236124599]
+script = ExtResource("1_pxcva")
+
+[node name="Button" type="Button" parent="." unique_id=2074572800]
+offset_left = 12.0
+offset_top = 20.0
+offset_right = 232.0
+offset_bottom = 126.0
+text = "Show raw"
+script = ExtResource("2_4704r")
+
+[node name="TextureRect_distort_target" type="TextureRect" parent="." unique_id=938957290]
+material = SubResource("ShaderMaterial_gc8bj")
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 256.0
+offset_right = 896.0
+offset_bottom = 640.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+texture = SubResource("PlaceholderTexture2D_67k38")
+
+[node name="TextureRect_fluid_raw" type="TextureRect" parent="." unique_id=655235123]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 256.0
+offset_right = 896.0
+offset_bottom = 640.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+texture = SubResource("ViewportTexture_67k38")
+
+[node name="SubViewport" type="SubViewport" parent="." unique_id=410487239]
+disable_3d = true
+canvas_item_default_texture_filter = 0
+oversampling = false
+size = Vector2i(256, 256)
+render_target_update_mode = 3
+
+[node name="ColorRect" type="ColorRect" parent="SubViewport" unique_id=1049931004]
+material = SubResource("ShaderMaterial_qtpj3")
+offset_right = 256.0
+offset_bottom = 256.0
+
+[connection signal="pressed" from="Button" to="Button" method="_on_pressed"]
