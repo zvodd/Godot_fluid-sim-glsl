@@ -8,6 +8,7 @@ extends Node2D
 @export var brush_radius : int = 4
 @export var density_amount : float = 0.6
 @export var dissipation : float = 0.995
+@export var max_force : float = 10.0
 
 # onready
 @onready var sub_vp : SubViewport = $SubViewport
@@ -19,6 +20,14 @@ extends Node2D
 var cpu_image : Image
 var gpu_tex : ImageTexture
 var mouse_prev : Vector2 = Vector2.ZERO
+
+
+
+var _delta_window_size : int = 5
+var _delta_history : Array[Vector2] = []
+var _smoothed_delta : Vector2 = Vector2.ZERO
+
+
 
 func _ready() -> void:
 	cpu_image = Image.create(resolution.x, resolution.y, false, Image.FORMAT_RGBA8)
@@ -43,6 +52,7 @@ func _ready() -> void:
 	sub_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	#sub_vp.own_world = true
 
+
 func _process(_delta: float) -> void:
 	# read GPU -> cpu_image (blocking). Keep resolution low.
 	_read_gpu()
@@ -50,6 +60,7 @@ func _process(_delta: float) -> void:
 	_handle_input()
 	# write CPU -> GPU texture
 	_write_gpu()
+
 
 func _read_gpu() -> void:
 	var tex := sub_vp.get_texture()
@@ -61,61 +72,73 @@ func _read_gpu() -> void:
 	# ensure same size; copy_from handles format conversion
 	cpu_image.copy_from(snap)
 
+
 func _write_gpu() -> void:
 	gpu_tex.update(cpu_image)
 
+
 # public helpers
-func inject_at_grid(grid_pos : Vector2i, vel : Vector2, amount : float = 1.0) -> void:
+func inject_at_grid(grid_pos : Vector2i, force_vec : Vector2, amount : float = 1.0) -> void:
 	for oy in range(-brush_radius, brush_radius + 1):
 		for ox in range(-brush_radius, brush_radius + 1):
 			var tx := grid_pos.x + ox
 			var ty := grid_pos.y + oy
 			if tx < 0 or ty < 0 or tx >= resolution.x or ty >= resolution.y:
 				continue
-			# distance falloff
 			var d := sqrt(float(ox*ox + oy*oy))
 			if d > float(brush_radius):
 				continue
 			var fall := 1.0 - (d / float(brush_radius))
 			var cur : Color = cpu_image.get_pixel(tx, ty)
-			# decode current velocity
-			var cur_vel := (Vector2(cur.r, cur.g) - Vector2(0.5,0.5)) * 2.0 * vel_scale
-			# add injected velocity
-			var new_vel := cur_vel + vel * fall
-			# clamp to vel_scale
+			# Decode
+			var cur_vel := (Vector2(cur.r, cur.g) - Vector2(0.5, 0.5)) * 2.0 * vel_scale
+			# Apply custom force_vec
+			var new_vel := cur_vel + (force_vec * fall)
+			# Clamp
 			new_vel.x = clampf(new_vel.x, -vel_scale, vel_scale)
 			new_vel.y = clampf(new_vel.y, -vel_scale, vel_scale)
-			# encode back
+			# Encode
 			var enc_r := (new_vel.x / vel_scale) * 0.5 + 0.5
 			var enc_g := (new_vel.y / vel_scale) * 0.5 + 0.5
 			var enc_b := clampf(cur.b + density_amount * amount * fall, 0.0, 1.0)
-			var enc_a := cur.a # leave pressure unchanged on injection
-			cpu_image.set_pixel(tx, ty, Color(enc_r, enc_g, enc_b, enc_a))
+			cpu_image.set_pixel(tx, ty, Color(enc_r, enc_g, enc_b, cur.a))
+
+
+func _update_mouse_filter(raw_delta : Vector2) -> void:
+	_delta_history.append(raw_delta)
+	if _delta_history.size() > _delta_window_size:
+		_delta_history.pop_front()
+	
+	var sum := Vector2.ZERO
+	for v in _delta_history:
+		sum += v
+	
+	_smoothed_delta = (sum / float(_delta_history.size())).limit_length(max_force)
+
 
 # private input mapping (simple screen->grid map)
 func _handle_input() -> void:
-	var target: TextureRect = texture_rect
-	
-	# Local space mouse (handles scale/pos/rotation)
+	var target : TextureRect = texture_rect
 	var local_mp := target.get_local_mouse_position()
 	var rect_size := target.size
 	
-	# Normalize to 0.0 - 1.0
 	var u := clampf(local_mp.x / rect_size.x, 0.0, 1.0)
 	var v := clampf(local_mp.y / rect_size.y, 0.0, 1.0)
 	
-	# Map to grid res
 	var grid_pos := Vector2i(
 		int(u * float(resolution.x)), 
 		int(v * float(resolution.y))
 	)
 	
-	# Delta logic
 	var mouse_curr := get_viewport().get_mouse_position()
-	var mouse_delta := mouse_curr - mouse_prev
+	var raw_delta := mouse_curr - mouse_prev
+	
+	# Update filter
+	_update_mouse_filter(raw_delta)
 	
 	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-		var vel_pixels := Vector2(mouse_delta.x, -mouse_delta.y) * 2.0
-		inject_at_grid(grid_pos, vel_pixels, 1.0)
+		# Use smoothed delta, invert Y for fluid space
+		var force := Vector2(_smoothed_delta.x, -_smoothed_delta.y) * 2.0
+		inject_at_grid(grid_pos, force, 1.0)
 		
 	mouse_prev = mouse_curr
