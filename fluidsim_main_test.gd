@@ -5,10 +5,10 @@ extends Node2D
 @export var resolution : Vector2i = Vector2i(256, 256)
 @export var vel_scale : float = 20.0
 @export var dt_override : float = 0.016
-@export var brush_radius : int = 4
+@export var brush_radius : int = 20
 @export var density_amount : float = 0.6
 @export var dissipation : float = 0.995
-@export var max_force : float = 10.0
+@export var max_force : float = 40.0
 
 # onready
 @onready var sub_vp : SubViewport = $SubViewport

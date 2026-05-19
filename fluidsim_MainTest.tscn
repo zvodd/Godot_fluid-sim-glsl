@@ -28,6 +28,10 @@ shader_parameter/res = Vector2(0, 0)
 shader_parameter/dt = 0.016
 shader_parameter/vel_scale = 20.0
 shader_parameter/dissipation = 0.995
+shader_parameter/wave_strength = 2.0
+shader_parameter/noise_scale = 5.0
+shader_parameter/noise_speed = 0.5
+shader_parameter/TIME_VAL = 0.0
 
 [node name="Node2D" type="Node2D" unique_id=236124599]
 script = ExtResource("1_pxcva")
