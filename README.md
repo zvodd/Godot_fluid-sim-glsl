@@ -5,7 +5,7 @@
 High-performance 2D fluid simulation designed for **Compatibility Mode (OpenGL 3.3)**. Unlike modern compute-heavy solutions, this project uses a standard **SubViewport/ColorRect loop** and **RGBA8 packing** to run on legacy hardware or web platforms where Compute Shaders are unavailable.
 
 
-https://github.com/user-attachments/assets/8f13809f-2b25-4897-80ee-e37ff5b42ab0
+https://github.com/user-attachments/assets/2bed53a4-4703-497f-86d8-6464edf13d5d
 
 
 ## Tech Specs
