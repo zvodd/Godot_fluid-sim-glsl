@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://8is2w4enfijx"]
 
-[ext_resource type="Script" uid="uid://tj3nare1px7q" path="res://fluidsim_main_test.gd" id="1_pxcva"]
-[ext_resource type="Shader" uid="uid://b7pqfc7vk3pr5" path="res://distort_display.gdshader" id="2_67k38"]
-[ext_resource type="Script" uid="uid://ew8yq3dttbyh" path="res://button_logic.gd" id="2_4704r"]
-[ext_resource type="Shader" uid="uid://ccil5d33wk0rv" path="res://fluid_logic.gdshader" id="2_rih6d"]
+[ext_resource type="Script" uid="uid://tj3nare1px7q" path="res://basic_demo/fluidsim_main_test.gd" id="1_pxcva"]
+[ext_resource type="Shader" uid="uid://b7pqfc7vk3pr5" path="res://basic_demo/distort_display.gdshader" id="2_67k38"]
+[ext_resource type="Script" uid="uid://ew8yq3dttbyh" path="res://basic_demo/button_logic.gd" id="2_4704r"]
+[ext_resource type="Shader" uid="uid://ccil5d33wk0rv" path="res://basic_demo/fluid_logic.gdshader" id="2_rih6d"]
 [ext_resource type="Texture2D" uid="uid://bphltjug0d3g8" path="res://GridColor_640.png" id="3_67k38"]
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_wyr84"]
@@ -29,6 +29,7 @@ shader_parameter/dt = 0.016
 shader_parameter/vel_scale = 20.0
 shader_parameter/dissipation = 0.99
 shader_parameter/wave_strength = 3.0
+shader_parameter/noise_delta_force = 2.0
 shader_parameter/noise_scale = 4.0
 shader_parameter/noise_speed = 0.8
 shader_parameter/orbital_radius = 0.5

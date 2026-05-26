@@ -1,4 +1,4 @@
-class_name FluidSimulation
+class_name FluidSimulationMain
 extends Node2D
 
 # exports

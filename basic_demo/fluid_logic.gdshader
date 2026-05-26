@@ -43,7 +43,7 @@ vec4 encode_out(vec2 vel, float density, float pressure) {
 }
 
 void fragment() {
-    vec2 uv = SCREEN_UV;
+    vec2 uv = UV;
     vec2 px = 1.0 / res;
 	float TIME_VAL = TIME;
 
