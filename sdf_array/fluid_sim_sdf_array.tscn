@@ -1,0 +1,115 @@
+[gd_scene format=3 uid="uid://32u2stbt72tv"]
+
+[ext_resource type="Shader" uid="uid://b7pqfc7vk3pr5" path="res://basic_demo/distort_display.gdshader" id="1_16bmd"]
+[ext_resource type="Script" uid="uid://b8c846b7e7md8" path="res://sdf_array/fluid_sim_sdf_array.gd" id="1_fus2i"]
+[ext_resource type="Texture2D" uid="uid://bphltjug0d3g8" path="res://GridColor_640.png" id="2_fus2i"]
+[ext_resource type="Shader" uid="uid://ds2ggvrssf2g4" path="res://sdf_array/sdf_logic_mat.gdshader" id="4_0mouw"]
+
+[sub_resource type="GDScript" id="GDScript_k1whm"]
+script/source = "extends Button
+@onready var texture_rect_distort_target: TextureRect = $\"../TextureRect_distort_target\"
+@onready var texture_rect_fluid_raw: TextureRect = $\"../TextureRect_fluid_raw\"
+
+func _ready() -> void:
+	texture_rect_fluid_raw.visible = false
+	text = \"Show raw fluid sim\"
+
+func _on_pressed() -> void:
+	if texture_rect_fluid_raw.visible:
+		texture_rect_fluid_raw.visible = false
+		text = \"Show raw fluid sim\"
+	else:
+		texture_rect_fluid_raw.visible = true
+		text = \"Show applied as distortion\"
+"
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_hewlb"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_aq8yi"]
+resource_local_to_scene = true
+shader = ExtResource("1_16bmd")
+shader_parameter/fluid_texture = SubResource("ViewportTexture_hewlb")
+shader_parameter/source_image = ExtResource("2_fus2i")
+shader_parameter/distort_strength = 0.05
+shader_parameter/vel_scale = 20.0
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_ihr42"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_ax4jg"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_k1whm"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hewlb"]
+resource_local_to_scene = true
+shader = ExtResource("4_0mouw")
+shader_parameter/prev_state = SubResource("ViewportTexture_k1whm")
+shader_parameter/res = Vector2(256, 256)
+shader_parameter/dt = 0.016
+shader_parameter/vel_scale = 20.0
+shader_parameter/dissipation = 0.99
+shader_parameter/wave_strength = 3.0
+shader_parameter/noise_delta_force = 2.0
+shader_parameter/noise_scale = 4.0
+shader_parameter/noise_speed = 0.8
+shader_parameter/orbital_radius = 0.5
+shader_parameter/affector_data = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/circle_radius = 10.0
+
+[node name="Node2D" type="Node2D" unique_id=973970934]
+script = ExtResource("1_fus2i")
+
+[node name="Button" type="Button" parent="." unique_id=314611177]
+offset_left = 12.0
+offset_top = 20.0
+offset_right = 232.0
+offset_bottom = 126.0
+text = "Show raw"
+script = SubResource("GDScript_k1whm")
+
+[node name="TextureRect_distort_target" type="TextureRect" parent="." unique_id=736045750]
+material = SubResource("ShaderMaterial_aq8yi")
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 256.0
+offset_right = 896.0
+offset_bottom = 640.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 6
+size_flags_vertical = 3
+texture = SubResource("PlaceholderTexture2D_ihr42")
+
+[node name="TextureRect_fluid_raw" type="TextureRect" parent="." unique_id=524998339]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 256.0
+offset_right = 896.0
+offset_bottom = 640.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 4
+texture = SubResource("ViewportTexture_ax4jg")
+
+[node name="SubViewport" type="SubViewport" parent="." unique_id=189206747]
+disable_3d = true
+canvas_item_default_texture_filter = 0
+oversampling = false
+size = Vector2i(256, 256)
+render_target_update_mode = 3
+
+[node name="ColorRect" type="ColorRect" parent="SubViewport" unique_id=1265133602]
+material = SubResource("ShaderMaterial_hewlb")
+offset_right = 256.0
+offset_bottom = 256.0
+
+[connection signal="pressed" from="Button" to="Button" method="_on_pressed"]
