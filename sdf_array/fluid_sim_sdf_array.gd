@@ -14,7 +14,6 @@ extends Node2D
 @onready var sub_vp : SubViewport = $SubViewport
 @onready var color_rect : CanvasItem = $SubViewport/ColorRect
 @onready var texture_rect: TextureRect = $TextureRect_fluid_raw
-@onready var fluid_material : ShaderMaterial = color_rect.material
 
 
 # vars
@@ -38,7 +37,7 @@ func _ready() -> void:
 
 	gpu_tex = ImageTexture.create_from_image(cpu_image)
 	# assign texture to shader
-	var mat := fluid_material
+	var mat := color_rect.material as ShaderMaterial
 	if mat and mat is ShaderMaterial:
 		mat.set_shader_parameter("prev_state", gpu_tex)
 		mat.set_shader_parameter("res", Vector2(resolution.x, resolution.y))
@@ -57,6 +56,8 @@ func _process(_delta: float) -> void:
 	_read_gpu()
 	# input and inject
 	_handle_input()
+	# Update SDF affectors (dynamic mouse + static pressure sources)
+	_update_affectors()
 	# write CPU -> GPU texture
 	_write_gpu()
 
@@ -77,34 +78,59 @@ func _write_gpu() -> void:
 
 
 # public helpers
-func inject_at_grid(grid_pos : Vector2i, force_vec : Vector2, _unused:float) -> void:
-	# Define your structured data
-	var affectors = [
-		{ "grid": grid_pos, "force": force_vec },
-		{ "grid": Vector2i(128,128), "force": Vector2(0.5,0.5) },
-	]
+func inject_at_grid(grid_pos : Vector2i, force_vec : Vector2, _amount: float = 1.0) -> void:
+	# Scaffolding for future CPU/Grid modifications
+	pass
+
+
+func _update_affectors() -> void:
+	var mat := color_rect.material as ShaderMaterial
+	if not mat:
+		return
+		
+	var affectors: Array[Dictionary] = []
 	
+	# 1. Dynamic Mouse Affector
+	var mouse_grid := Vector2.ZERO
+	var mouse_f := Vector2.ZERO
+	
+	if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+		var target : TextureRect = texture_rect
+		var local_mp := target.get_local_mouse_position()
+		var rect_size := target.size
+		
+		var u := clampf(local_mp.x / rect_size.x, 0.0, 1.0)
+		var v := clampf(local_mp.y / rect_size.y, 0.0, 1.0)
+		
+		mouse_grid = Vector2(u * float(resolution.x), v * float(resolution.y))
+		# Invert Y for fluid space
+		mouse_f = Vector2(_smoothed_delta.x, -_smoothed_delta.y) * 2.0
+		
+		affectors.append({ "grid": mouse_grid, "force": mouse_f })
+		
+	
+	
+	# 2. Static pressure/force source 1: Bottom-Left pushing up-right
+	affectors.append({ "grid": Vector2(64.0, 192.0), "force": Vector2(15.0, -15.0) })
+	
+	# 3. Static pressure/force source 2: Bottom-Right pushing up-left
+	affectors.append({ "grid": Vector2(192.0, 192.0), "force": Vector2(-15.0, -15.0) })
+
 	var flat_array: PackedFloat32Array = []
-	# 1. Total size must be: 1 slot for length + (4 slots * number of affectors)
 	flat_array.resize(65)
-
-	# 2. Store the length at the very beginning
-	flat_array[0] = float(len(affectors))
-
-	# 3. Loop through and offset your stride by 1 to skip the length slot
-	for i in range(len(affectors)):
-		if i == 16: break #Cap
-		var ndx = 1 + (4 * i) # Starts at 1, then 5, then 9, etc.
+	flat_array[0] = float(affectors.size())
+	
+	for i in range(affectors.size()):
+		if i == 16: break
+		var ndx = 1 + (4 * i)
 		
 		flat_array[ndx]     = float(affectors[i].grid.x)
 		flat_array[ndx + 1] = float(affectors[i].grid.y)
-		flat_array[ndx + 2] = affectors[i].force.x # Fixed your .x typo here!
+		flat_array[ndx + 2] = affectors[i].force.x
 		flat_array[ndx + 3] = affectors[i].force.y
 		
-	var mat = material as ShaderMaterial
-	if mat:
-		# Send the flat array. Godot groups every 4 floats into a vec4 automatically!
-		mat.set_shader_parameter("affector_data", flat_array)
+	mat.set_shader_parameter("affector_data", flat_array)
+
 
 
 func _update_mouse_filter(raw_delta : Vector2) -> void:

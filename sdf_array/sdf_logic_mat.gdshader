@@ -113,8 +113,7 @@ void fragment() {
         
         // Inject density and force into the fluid simulation
         density += mask * 0.5; 
-        //vel += mask * force_vec * dt * 1000.0; // Adjust 100.0 multiplier to change impact strength
-        vel += mask * vec2(0.5,0.5) * dt * 1000.0; // Adjust 100.0 multiplier to change impact strength
+        vel += mask * force_vec * dt * 1000.0; // Adjust 100.0 multiplier to change impact strength
     }
 	
 	//float dist = length(current_grid_pos - vec2(128.0));
